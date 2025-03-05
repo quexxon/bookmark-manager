@@ -81,36 +81,6 @@ func (h *Handler) getTemplateFile(filename string) string {
 	return fmt.Sprintf("templates/%s/%s", h.appConf.Theme, filename)
 }
 
-func (h *Handler) isAuthenticated(w http.ResponseWriter, r *http.Request) bool {
-	cookie, err := r.Cookie("auth")
-	if err != nil {
-		return false
-	}
-
-	isValid := h.auth.IsValid(cookie)
-
-	if isValid {
-		h.auth.SetCookie(w, cookie.Value)
-	}
-
-	return h.auth.IsValid(cookie)
-}
-
-func (h *Handler) authenticateAPI(w http.ResponseWriter, r *http.Request) bool {
-	cookie, err := r.Cookie("auth")
-	if err != nil {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return false
-	}
-	isValid := h.auth.IsValid(cookie)
-	if !isValid {
-		http.Error(w, "Forbidden", http.StatusForbidden)
-		return false
-	}
-
-	return true
-}
-
 func (h *Handler) internalServerError(w http.ResponseWriter, msg string, err error) {
 	log.Printf("ERROR: %s: %v", msg, err)
 	http.Error(w, "Internal Server Error", http.StatusInternalServerError)

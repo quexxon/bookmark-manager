@@ -50,7 +50,7 @@ func TestIsValidSuccess(t *testing.T) {
 		Value: "test",
 	}
 
-	assert.True(t, authenticator.IsValid(cookie))
+	assert.True(t, authenticator.isValidCookie(cookie))
 }
 
 func TestIsInvalidInvalidHash(t *testing.T) {
@@ -65,7 +65,7 @@ func TestIsInvalidInvalidHash(t *testing.T) {
 		Value: "test",
 	}
 
-	assert.False(t, authenticator.IsValid(cookie))
+	assert.False(t, authenticator.isValidCookie(cookie))
 }
 
 func TestIsValidEmptyHash(t *testing.T) {
@@ -74,5 +74,5 @@ func TestIsValidEmptyHash(t *testing.T) {
 	}
 
 	cookie := &http.Cookie{}
-	assert.False(t, authenticator.IsValid(cookie))
+	assert.False(t, authenticator.isValidCookie(cookie))
 }

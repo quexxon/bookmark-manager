@@ -41,33 +41,52 @@ func main() {
 
 	go initializeBookmarkChecker(appConf, db)
 
-	auth := auth.NewAuthenticator(appConf)
-	handler := handlers.NewHandler(db, appConf, auth)
+	authenticator := auth.NewAuthenticator(appConf)
+	handler := handlers.NewHandler(db, appConf, authenticator)
+	loginAddress := fmt.Sprintf("%slogin", appConf.BaseURL)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
-	r.Get("/", handler.HandleIndex)
-	r.Get("/atom.xml", handler.HandleFeed)
-	r.Get("/rss.xml", handler.HandleFeed)
-	r.Get("/feed.json", handler.HandleFeed)
+
+	// Public routes
 	r.Get("/robots.txt", handler.HandleRobotsTxt)
-	r.Get("/tags/{tags}", handler.HandleTags)
-	r.Get("/tags/{tags}/atom.xml", handler.HandleFeed)
-	r.Get("/tags/{tags}/rss.xml", handler.HandleFeed)
-	r.Get("/tags/{tags}/feed.json", handler.HandleFeed)
 	r.Get("/login", handler.HandleLogin)
 	r.Post("/login", handler.HandleLogin)
 	r.Get("/logout", handler.HandleLogout)
-	r.Get("/admin/bookmarks", handler.HandlePrivateBookmarks)
-	r.Get("/admin/bookmarks/add", handler.HandleBookmarkAdd)
-	r.Post("/admin/bookmarks/add", handler.HandleBookmarkAdd)
-	r.Get("/admin/bookmarks/broken", handler.HandleBrokenBookmarks)
-	r.Get("/admin/bookmarks/{bookmarkID}", handler.HandleBookmarkEdit)
-	r.Post("/admin/bookmarks/{bookmarkID}", handler.HandleBookmarkEdit)
-	r.Get("/admin/bookmarks/{bookmarkID}/delete", handler.HandleBookmarkDelete)
-	r.Post("/admin/bookmarks/{bookmarkID}/delete", handler.HandleBookmarkDelete)
-	r.Get("/api/metadata", handler.HandleAPIMetadata)
-	r.Get("/api/tags", handler.HandleAPITags)
+
+	// Admin-only routes
+	r.With(
+		auth.Authenticate(appConf, auth.WithRedirect(loginAddress)),
+	).Group(func(r chi.Router) {
+		r.Get("/admin/bookmarks", handler.HandlePrivateBookmarks)
+		r.Get("/admin/bookmarks/add", handler.HandleBookmarkAdd)
+		r.Post("/admin/bookmarks/add", handler.HandleBookmarkAdd)
+		r.Get("/admin/bookmarks/broken", handler.HandleBrokenBookmarks)
+		r.Get("/admin/bookmarks/{bookmarkID}", handler.HandleBookmarkEdit)
+		r.Post("/admin/bookmarks/{bookmarkID}", handler.HandleBookmarkEdit)
+		r.Get("/admin/bookmarks/{bookmarkID}/delete", handler.HandleBookmarkDelete)
+		r.Post("/admin/bookmarks/{bookmarkID}/delete", handler.HandleBookmarkDelete)
+	})
+
+	// Hybrid routes
+	r.With(
+		auth.Authenticate(appConf, auth.BypassRemediation),
+	).Group(func(r chi.Router) {
+		r.Get("/", handler.HandleIndex)
+		r.Get("/atom.xml", handler.HandleFeed)
+		r.Get("/feed.json", handler.HandleFeed)
+		r.Get("/rss.xml", handler.HandleFeed)
+		r.Get("/tags/{tags}", handler.HandleTags)
+		r.Get("/tags/{tags}/atom.xml", handler.HandleFeed)
+		r.Get("/tags/{tags}/rss.xml", handler.HandleFeed)
+		r.Get("/tags/{tags}/feed.json", handler.HandleFeed)
+	})
+
+	apiRouter := chi.NewRouter()
+	apiRouter.Use(auth.Authenticate(appConf, auth.WithBearerToken))
+	apiRouter.Get("/metadata", handler.HandleAPIMetadata)
+	apiRouter.Get("/tags", handler.HandleAPITags)
+	r.Mount("/api", apiRouter)
 
 	handler.ServeFiles(r, "/assets", http.Dir(fmt.Sprintf("templates/%s/assets", appConf.Theme)))
 	handler.ServeFiles(r, "/scripts", http.Dir("components/scripts"))

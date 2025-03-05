@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -10,16 +9,12 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/saaste/bookmark-manager/auth"
 	"github.com/saaste/bookmark-manager/bookmarks"
 )
 
 func (h *Handler) HandlePrivateBookmarks(w http.ResponseWriter, r *http.Request) {
-	isAuthenticated := h.isAuthenticated(w, r)
-	if !isAuthenticated {
-		http.Redirect(w, r, fmt.Sprintf("%slogin", h.appConf.BaseURL), http.StatusFound)
-		return
-	}
-
+	isAuthenticated := auth.IsAuthenticated(r)
 	page := h.getPageParam(r)
 
 	bookmarkResult, err := h.bookmarkRepo.GetPrivate(page, h.appConf.PageSize)
@@ -44,12 +39,7 @@ func (h *Handler) HandlePrivateBookmarks(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *Handler) HandleBrokenBookmarks(w http.ResponseWriter, r *http.Request) {
-	isAuthenticated := h.isAuthenticated(w, r)
-	if !isAuthenticated {
-		http.Redirect(w, r, fmt.Sprintf("%slogin", h.appConf.BaseURL), http.StatusFound)
-		return
-	}
-
+	isAuthenticated := auth.IsAuthenticated(r)
 	bookmarks, err := h.bookmarkRepo.GetBrokenBookmarks()
 	if err != nil {
 		h.internalServerError(w, "Failed to fetch bookmarks", err)
@@ -71,12 +61,7 @@ func (h *Handler) HandleBrokenBookmarks(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *Handler) HandleBookmarkAdd(w http.ResponseWriter, r *http.Request) {
-	isAuthenticated := h.isAuthenticated(w, r)
-	if !isAuthenticated {
-		http.Redirect(w, r, fmt.Sprintf("%slogin", h.appConf.BaseURL), http.StatusFound)
-		return
-	}
-
+	isAuthenticated := auth.IsAuthenticated(r)
 	baseData := h.defaultTemplateData(w, r, isAuthenticated)
 	baseData.Title = "Add Bookmark"
 
@@ -131,12 +116,7 @@ func (h *Handler) HandleBookmarkAdd(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) HandleBookmarkEdit(w http.ResponseWriter, r *http.Request) {
-	isAuthenticated := h.isAuthenticated(w, r)
-	if !isAuthenticated {
-		http.Redirect(w, r, fmt.Sprintf("%slogin", h.appConf.BaseURL), http.StatusFound)
-		return
-	}
-
+	isAuthenticated := auth.IsAuthenticated(r)
 	idParam := chi.URLParam(r, "bookmarkID")
 	if idParam == "" {
 		http.NotFound(w, r)
@@ -216,12 +196,7 @@ func (h *Handler) HandleBookmarkEdit(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) HandleBookmarkDelete(w http.ResponseWriter, r *http.Request) {
-	isAuthenticated := h.isAuthenticated(w, r)
-	if !isAuthenticated {
-		http.Redirect(w, r, fmt.Sprintf("%slogin", h.appConf.BaseURL), http.StatusFound)
-		return
-	}
-
+	isAuthenticated := auth.IsAuthenticated(r)
 	idParam := chi.URLParam(r, "bookmarkID")
 	if idParam == "" {
 		log.Printf("No bookmark ID in the path")

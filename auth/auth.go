@@ -21,13 +21,17 @@ func NewAuthenticator(appConf *config.AppConfig) *Authenticator {
 	}
 }
 
-func (a *Authenticator) IsValid(c *http.Cookie) bool {
+func (a *Authenticator) isValidCookie(c *http.Cookie) bool {
 	if c.Value == "" {
 		return false
 	}
 
 	err := a.compareHashAndPassword([]byte(c.Value), []byte(a.appConf.Password+a.appConf.Secret))
 	return err == nil
+}
+
+func (a *Authenticator) isValidBearerToken(token string) bool {
+	return token == a.appConf.Secret
 }
 
 func (a *Authenticator) CalculateHash() (string, error) {

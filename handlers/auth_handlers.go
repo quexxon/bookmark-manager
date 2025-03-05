@@ -2,10 +2,12 @@ package handlers
 
 import (
 	"net/http"
+
+	"github.com/saaste/bookmark-manager/auth"
 )
 
 func (h *Handler) HandleLogin(w http.ResponseWriter, r *http.Request) {
-	isAuthenticated := h.isAuthenticated(w, r)
+	isAuthenticated := auth.IsAuthenticated(r)
 	if isAuthenticated {
 		http.Redirect(w, r, h.appConf.BaseURL, http.StatusFound)
 		return

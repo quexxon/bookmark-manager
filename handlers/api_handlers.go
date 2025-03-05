@@ -6,14 +6,10 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/go-chi/render"
+	"github.com/saaste/bookmark-manager/auth"
 )
 
 func (h *Handler) HandleAPIMetadata(w http.ResponseWriter, r *http.Request) {
-	isAuthenticated := h.authenticateAPI(w, r)
-	if !isAuthenticated {
-		return
-	}
-
 	url := r.URL.Query().Get("url")
 	if url == "" {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
@@ -72,11 +68,7 @@ func (h *Handler) HandleAPIMetadata(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) HandleAPITags(w http.ResponseWriter, r *http.Request) {
-	isAuthenticated := h.authenticateAPI(w, r)
-	if !isAuthenticated {
-		return
-	}
-
+	isAuthenticated := auth.IsAuthenticated(r)
 	tags, err := h.bookmarkRepo.GetTags(isAuthenticated)
 	if err != nil {
 		h.internalServerError(w, "failed to fetch tags", err)
