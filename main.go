@@ -72,8 +72,19 @@ func main() {
 	handler.ServeFiles(r, "/assets", http.Dir(fmt.Sprintf("templates/%s/assets", appConf.Theme)))
 	handler.ServeFiles(r, "/scripts", http.Dir("components/scripts"))
 
-	log.Printf("Server address: http://localhost:%d", appConf.Port)
-	err = http.ListenAndServe(fmt.Sprintf(":%d", appConf.Port), r)
+	useTLS := appConf.TLSCert != "" && appConf.TLSKey != ""
+	protocol := "http"
+	if useTLS {
+		protocol = "https"
+	}
+
+	log.Printf("Server address: %s://localhost:%d", protocol, appConf.Port)
+	addr := fmt.Sprintf(":%d", appConf.Port)
+	if useTLS {
+		err = http.ListenAndServeTLS(addr, appConf.TLSCert, appConf.TLSKey, r)
+	} else {
+		err = http.ListenAndServe(addr, r)
+	}
 	if errors.Is(err, http.ErrServerClosed) {
 		log.Println("Server closed")
 	} else if err != nil {

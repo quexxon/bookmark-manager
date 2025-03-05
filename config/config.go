@@ -31,6 +31,8 @@ type AppConfig struct {
 	AuthorName        string `yaml:"author_name,omitempty"`
 	AuthorEmail       string `yaml:"author_email,omitempty"`
 	CheckerUserAgent  string `yaml:"checker_user_agent,omitempty"`
+	TLSCert           string `yaml:"tls_cert"`
+	TLSKey            string `yaml:"tls_key"`
 }
 
 func LoadConfig() (*AppConfig, error) {
